@@ -1,0 +1,121 @@
+<city>
+	<general inhabitants="10000" households="3500" childrenAgeLimit="18" retirementAgeLimit="65" carRate="0.58" unemploymentRate="0.05" footDistanceLimit="400" incomingTraffic="1000" outgoingTraffic="200"/>
+	
+	<parameters carPreference="0.5" meanTimePerKmInCity="6" freeTimeActivityRate="0.1" uniformRandomTraffic="0.1" departureVariation="0" />
+
+	<population>
+		<!--Source: https://ec.europa.eu/eurostat/web/interactive-publications/demography-2023#eu-citizens intermediate region EU global-->
+		<bracket beginAge="0" endAge="15" peopleNbr="1490" />
+		<bracket beginAge="15" endAge="19" peopleNbr="520" />
+		<bracket beginAge="19" endAge="64" peopleNbr="5830" />
+		<bracket beginAge="64" endAge="79" peopleNbr="1540" />
+		<bracket beginAge="79" endAge="100" peopleNbr="620" />
+	</population>
+
+	<workHours>
+		<opening hour="21600" proportion="0.1" />
+		<opening hour="25200" proportion="0.1" />
+		<opening hour="28800" proportion="0.5" />
+		<opening hour="32400" proportion="0.3" />
+
+		<closing hour="50400" proportion="0.2" />
+		<closing hour="57600" proportion="0.5" />
+		<closing hour="61200" proportion="0.2" />
+		<closing hour="64800" proportion="0.1" />
+	</workHours>
+
+	<streets>
+		<street edge="219" population="1.0" workPosition="1.0" />
+		<street edge="92" population="1.0" workPosition="1.0" />
+		<street edge="-75" population="1.0" workPosition="1.0" />
+		<street edge="75" population="1.0" workPosition="1.0" />
+		<street edge="60" population="1.0" workPosition="1.0" />
+		<street edge="-60" population="1.0" workPosition="1.0" />
+		<street edge="58" population="1.0" workPosition="0.0" />
+		<street edge="37" population="1.0" workPosition="0.0" />
+		<street edge="-31" population="2.0" workPosition="2.0" />
+		<street edge="31" population="2.0" workPosition="2.0" />
+		<street edge="-23" population="2.0" workPosition="3.0" />
+		<street edge="23" population="2.0" workPosition="3.0" />
+		<street edge="64" population="2.0" workPosition="2.0" />
+		<street edge="-64" population="2.0" workPosition="2.0" />
+		<street edge="120" population="3.0" workPosition="2.0" />
+		<street edge="-120" population="3.0" workPosition="2.0" />
+		<street edge="-109" population="2.0" workposition="4.0" />
+		<street edge="109" population="2.0" workPosition="4.0" />
+		<street edge="162" population="3.0" workPosition="1.0" />
+		<street edge="-162" population="3.0" workPosition="1.0" />
+		<street edge="-131" population="3.0" workPosition="1.0" />
+		<street edge="131" population="0.0" workPosition="5.0" />
+		<street edge="144" population="0.0" workPosition="5.0" />
+		<street edge="-144" population="1.0" workPosition="2.0" />
+		<street edge="-123" population="0.0" workPosition="5.0" />
+		<street edge="152" population="2.0" workPosition="1.0" />
+		<street edge="-152" population="3.0" workPosition="2.0" />
+		<street edge="-148" population="1.0" workPosition="1.0" />
+		<street edge="148" population="1.0" workPosition="1.0" />
+		<street edge="-164" population="1.0" workPosition="0.0" />
+		<street edge="164" population="1.0" workPosition="1.0" />
+		<street edge="172" population="1.0" workPosition="1.0" />
+		<street edge="-172" population="1.0" workPosition="1.0" />
+		<street edge="-190" population="1.0" workPosition="0.0" />
+		<street edge="190" population="1.0" workPosition="0.0" />
+		<street edge="123" population="1.0" workPosition="4.0" />
+		<street edge="15" population="2.0" workPosition="2.0" />
+		<street edge="-15" population="1.0" workPosition="3.0" />
+		<street edge="11" population="3.0" workPosition="2.0" />
+		<street edge="-11" population="2.0" workPosition="1.0" />
+		<street edge="3" population="0.5" workPosition="0.0" />
+		<street edge="-3" population="0.5" workPosition="0.0" />
+		<street edge="27" population="1.0" workPosition="0.0" />
+		<street edge="-27" population="1.0" workPosition="0.1" />
+		<street edge="-71" population="1.0" workPosition="0.0" />
+		<street edge="71" population="1.0" workPosition="0.0" />
+		<street edge="-55" population="1.0" workPosition="0.1" />
+		<street edge="55" population="1.0" workPosition="0.0" />
+		<street edge="45" population="0.5" workPosition="0.0" />
+		<street edge="68" population="1.0" workPosition="0.0" />
+		<street edge="-43" population="1.0" workPosition="0.1" />
+		<street edge="43" population="1.0" workPosition="0.0" />
+		<street edge="202" population="0.5" workPosition="0.0" />
+		<street edge="-202" population="0.1" workPosition="0.0" />
+		<street edge="-199" population="0.5" workPosition="0.0" />
+		<street edge="199" population="0.25" workPosition="0.0" />
+	</streets>
+
+	<cityGates>
+		<entrance edge="-229" pos="5" incoming="1.0" outgoing="0.0" />
+		<entrance edge="229" pos="85" incoming="0.0" outgoing="1.0" />
+		<entrance edge="-196" pos="5" incoming="5.0" outgoing="0.0" />
+		<entrance edge="196" pos="190" incoming="0.0" outgoing="4.7" />
+		<entrance edge="-184" pos="5" incoming="2.0" outgoing="0.0" />
+		<entrance edge="184" pos="87" incoming="0.0" outgoing="2.3" />
+		<entrance edge="-79" pos="5" incoming="3.0" outgoing="0.0" />
+		<entrance edge="79" pos="87" incoming="0.0" outgoing="3.0" />
+		<entrance edge="-334" pos="5" incoming="1.5" outgoing="0.0" />
+		<entrance edge="334" pos="183" incoming="0.0" outgoing="1.5" />
+		<entrance edge="-338" pos="5" incoming="1.0" outgoing="0.0" />
+		<entrance edge="338" pos="186" incoming="0.0" outgoing="1.0" />
+		<entrance edge="-206" pos="5" incoming="5.0" outgoing="0.0" />
+		<entrance edge="5" pos="284" incoming="0.0" outgoing="5.0" />
+	</cityGates>
+
+	<schools>
+		<!--Preschools-->
+		<school edge="-162" pos="100" beginAge="3" endAge="6" capacity="100" opening="25200" closing="57600"/>
+
+		<!--Elementary schools-->
+		<school edge="-120" pos="100" beginAge="6" endAge="15" capacity="750" opening="28800" closing="57600" />
+		<school edge="-172" pos="20" beginAge="6" endAge="15" capacity="350" opening="28800" closing="57600"/>
+		<school edge="11" pos="40" beginAge="6" endAge="15" capacity="400" opening="28800" closing="57600" />
+
+		<!--Secondary schools (gymnasium)-->
+		<school edge="131" pos="100" beginAge="15" endAge="19" capacity="600" opening="28800" closing="54000" />
+	</schools>
+
+	<busStations>
+	</busStations>
+
+	<busLines>
+	</busLines>
+</city>
