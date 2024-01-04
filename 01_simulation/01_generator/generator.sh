@@ -16,13 +16,9 @@ $SUMO_HOME/tools/generateParkingAreaRerouters.py -n ../02_scenario/rand_grid.net
 python3 ./extend_rerouter_timings.py #extends rerouter timing to 11 days
 
 
-#generating initial routes:
-duarouter -n ../02_scenario/rand_grid.net.xml -r ../02_scenario/gen_activities.trips.xml -o ../02_scenario/gen_activities.rou.xml --ignore-errors -a ../02_scenario/parking_areas.add.xml
-
-
 ######## EXTENDING THE BASIC SIMULATION WITH PARKING SIMULATION ########
 #adding stops:
-python3 ./parking_activities.py
+python3 ./parking_activities.py ../02_scenario/gen_activities.trips.xml ../02_scenario/activities_with_parking.trips.xml
 
 #generating routes from trips:
 duarouter -n ../02_scenario/rand_grid.net.xml -r ../02_scenario/activities_with_parking.trips.xml -o ../02_scenario/activities_with_parking.rou.xml --ignore-errors -a ../02_scenario/parking_areas.add.xml
@@ -32,5 +28,4 @@ duarouter -n ../02_scenario/rand_grid.net.xml -r ../02_scenario/activities_with_
 ################# CLEANING UP ####################
 rm ../02_scenario/gen_activities.trips.xml
 rm ../02_scenario/activities_with_parking.trips.xml
-rm -f ../02_scenario/gen_activities.rou.alt.xml
 rm -f ../02_scenario/activities_with_parking.rou.alt.xml
