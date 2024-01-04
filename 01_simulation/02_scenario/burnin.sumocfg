@@ -1,0 +1,18 @@
+<configuration>
+	<input>
+		<net-file value="rand_grid.net.xml"/>
+		<route-files value="activities_with_parking.rou.xml"/>
+		<additional-files value="parking_areas.add.xml,parking_rerouters.add.xml"/>
+	</input>
+	<time>
+		<begin value="0" />
+		<end value="345601" />
+	</time>
+	<processing>
+		<random-depart-offset value="3600" />
+	</processing>
+	<output>
+		<save-state.times value="345600"/>
+		<save-state.files value="stable_midnight.state.xml"/>
+	</output>
+</configuration>

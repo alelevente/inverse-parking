@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 DAYS = 10 #number of days to generate
-ROOT = "../../02_simulation/random_grid/"
+ROOT = "../02_scenario/"
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
@@ -40,7 +40,61 @@ def get_stop_duration(trip_df, veh_id, move_id):
             start = r["depart"]
     return -1
 
-def save(file_path):
+def generate_stops_households(trip_df, veh_id, days=1):
+    '''
+        For households, this function replaces trips by stops at the given destinations.
+    '''
+    moves = trip_df[trip_df["veh_id"] == veh_id]
+    home = moves.iloc[0]
+    
+    new_trip = ET.Element("trip")
+    new_trip.set("id", "%s:0"%(veh_id))
+    new_trip.set("type", "default")
+    new_trip.set("depart", str(home["depart"]))
+    new_trip.set("departPos", str(home["departPos"]))
+    new_trip.set("arrivalPos", str(home["arrivalPos"]))
+    new_trip.set("from", str(home["from"]))
+    new_trip.set("to", str(home["from"]))
+    
+    for day in range(days):
+        for i,r in moves.iterrows():
+            new_stop = ET.SubElement(new_trip, "stop")
+            new_stop.set("parkingArea", "pa%s"%r["to"])
+            
+            move_id = int(r["move_id"])
+            stop_duration = get_stop_duration(moves, veh_id, move_id)
+            if stop_duration == -1: #last trip
+                stop_duration = np.random.normal(home["depart"]+24*60*60 - r["depart"], 7*60, 1)[0] #staying at home for a random time
+                
+            new_stop.set("duration", str(stop_duration))
+            
+    return new_trip
+
+def generate_stops_commuters(trip_df, veh_id, day):
+    moves = trip_df[trip_df["veh_id"] == veh_id]
+    home = moves.iloc[0]
+    out = moves.iloc[-1]
+    
+    departure_time = float(home["depart"]) + 24*60*60*day
+    new_trip = ET.Element("trip")
+    new_trip.set("id", "%s:%d"%(veh_id, day))
+    new_trip.set("type", "default")
+    new_trip.set("depart", str(departure_time))
+    new_trip.set("departPos", str(home["departPos"]))
+    new_trip.set("arrivalPos", str(home["arrivalPos"]))
+    new_trip.set("from", str(home["from"]))
+    new_trip.set("to", str(out["to"]))
+    
+    #adding parking during the day:
+    move_id = home["move_id"]
+    parking_time = get_stop_duration(moves, veh_id, move_id)
+    new_stop = ET.SubElement(new_trip, "stop")
+    new_stop.set("duration", str(parking_time))
+    new_stop.set("parkingArea", "pa%s"%home["to"])
+    
+    return new_trip
+
+def save(file_path, trips_with_parking_tree):
     with open(file_path, "w") as f:
         f.write(prettify(trips_with_parking_tree))
 
@@ -50,7 +104,7 @@ def main():
     processed_households = set() #one household car shall be processed only once _at all_
     trips = read_trips_df(ROOT+"gen_activities.trips.xml")
 
-    for day in trange(DAYS):
+    for day in range(DAYS):
         processed_commuters = set() #one commuter car shall be processed only once _per day_
         for elem in trips_tree.getroot():
             if elem.tag != "trip":
@@ -91,7 +145,7 @@ def main():
                     trips_with_parking_tree.insert(len(trips_with_parking_tree), commuter_stops)
                     processed_commuters.add(veh_id)
                     
-    save(ROOT+"burnin_trips.trip.xml")
+    save(ROOT+"activities_with_parking.trips.xml", trips_with_parking_tree)
                     
 if __name__ == "__main__":
     main()
