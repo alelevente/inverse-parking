@@ -161,4 +161,5 @@ cython_debug/
 
 #Project specific ignorances:
 01_simulation/02_scenario/*.xml
+01_simulation/04_results/*.csv
 
