@@ -3,11 +3,10 @@
 		<net-file value="rand_grid.net.xml"/>
 		<route-files value="activities_with_parking.rou.xml"/>
 		<additional-files value="parking_areas.add.xml,parking_rerouters.add.xml"/>
-		<load-state value="stable_midnight.state.xml"/>
 	</input>
 	<time>
 		<begin value="345600" />
-		<end value="432000" />
+		<end value="777600" />
 	</time>
 	<processing>
 		<random-depart-offset value="3600" />

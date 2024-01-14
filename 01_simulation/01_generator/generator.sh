@@ -18,7 +18,7 @@ python3 ./extend_rerouter_timings.py #extends rerouter timing to 11 days
 
 ######## EXTENDING THE BASIC SIMULATION WITH PARKING SIMULATION ########
 #adding stops:
-python3 ./parking_activities.py ../02_scenario/gen_activities.trips.xml ../02_scenario/activities_with_parking.trips.xml
+python3 ./parking_activities.py ../02_scenario/gen_activities.trips.xml ../02_scenario/activities_with_parking.trips.xml --days 10
 
 #generating routes from trips:
 duarouter -n ../02_scenario/rand_grid.net.xml -r ../02_scenario/activities_with_parking.trips.xml -o ../02_scenario/activities_with_parking.rou.xml --ignore-errors -a ../02_scenario/parking_areas.add.xml

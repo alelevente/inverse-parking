@@ -11,8 +11,4 @@
 	<processing>
 		<random-depart-offset value="3600" />
 	</processing>
-	<output>
-		<save-state.times value="345600"/>
-		<save-state.files value="stable_midnight.state.xml"/>
-	</output>
 </configuration>

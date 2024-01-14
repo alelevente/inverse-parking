@@ -162,4 +162,6 @@ cython_debug/
 #Project specific ignorances:
 01_simulation/02_scenario/*.xml
 01_simulation/04_results/*.csv
+02_da/saved_models/*
+01_simulation/03_traci/stable[0-9]*.xml
 
