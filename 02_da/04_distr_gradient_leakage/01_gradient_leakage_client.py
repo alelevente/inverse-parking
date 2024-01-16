@@ -14,74 +14,48 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+import requests
+import neural_network
+
 #***CONSTANTS***
 #Configuration:
 TIME_WINDOW = 15*60 #[s]
 
 #GPU:
-NUM_GPUS = 5#6
-GPU_MEM_SIZE = 1024 #MiB
+NUM_GPUS = 4#6
+GLOBAL_GPU_MEM_SIZE = 512 #MiB
 
 #Files:
-RESULTS_ROOT = "../01_simulation/04_results/"
+RESULTS_ROOT = "../../01_simulation/04_results/"
 SEEDS = ['42', '1234', '1867', '613', '1001']
 
 
 
 #***SETUP FUNCTION***
-def setup_logical_gpus():
-    '''
-        Sets up virtual GPUs and places models onto them.
-        Returns:
-            - tf models placed on corresponding logical GPUs
-    '''
+def setup_logical_gpu():
     #prepare the GPU (for supporting possible multiprocessing)
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
         try:
             tf.config.set_logical_device_configuration(
                 gpus[0],
-                [tf.config.LogicalDeviceConfiguration(memory_limit=GPU_MEM_SIZE)]*NUM_GPUS)
+                [tf.config.LogicalDeviceConfiguration(memory_limit=GLOBAL_GPU_MEM_SIZE)])
             logical_gpus = tf.config.list_logical_devices('GPU')
             print(len(gpus), "Physical GPU,", len(logical_gpus), "Logical GPUs")
         except RuntimeError as e:
             # Virtual devices must be set before GPUs have been initialized
             print(e)
-    
-    #placing the model on the gpus:
-    models = [None]
-    for i in range(1, NUM_GPUS):
-        models.append(None)
-    return models
             
             
 #***TRAINING FUNCTION***
-def create_test_data(p_id, p_data):
-    '''
-        Creates test data for parking data for a complete day.
-    '''
-    parking_data = p_data[p_data[f"parking_id_{p_id}"] == 1]
-    t = np.arange(0, 1, 1/(24*60*60))
-    one_hot = parking_data.drop(columns=["veh_id", "time", "occupancy", "seed", "time_of_day"]).iloc[0]
-    one_hot = [one_hot.values]*len(t)
-    pred_x = np.array(one_hot)
-    pred_x = pd.DataFrame(pred_x)
-    pred_x["t"] = t
-    return pred_x
-
-def create_difference_dataset(p_data, parkings, vehicle_model, vehicle_gpu, global_model, global_gpu, global_model_lock):
+def create_difference_dataset(global_predict, vehicle_predict):
     '''
         Creates a per parking list of the differences in prediction between the global and
         a vehicle's model.
         
         Parameters:
-            - p_data: parking lot dataset
-            - parkings: list of parking lots
-            - vehicle_model: tensorflow model of the vehicle
-            - vehicle_gpu: logical device on which the vehicle model resides
-            - global_model: tensorflow model of the global model
-            - global_gpu: logical device on which the global model resides
-            - global_model_lock: lock object to access the global model
+            - global_predict: prediction of the global model per parking lots
+            - vehicle_predict: prediction of a local vehicle per parking lots
             
         Returns:
             - prediction differences
@@ -89,19 +63,11 @@ def create_difference_dataset(p_data, parkings, vehicle_model, vehicle_gpu, glob
     p_diffs = {}
 
     for p in parkings:
-        test_data = create_test_data(p, p_data)
-        #local, vehicle:
-        with tf.device(vehicle_gpu):
-            pred_vehicle = vehicle_model.predict(test_data, batch_size=10000)
-            
-        #global:
-        global_model_lock.acquire()
-        with tf.device(global_gpu):
-            pred_global  = global_model.predict(test_data, batch_size=10000)
-        global_model_lock.release()
+        pred_vehicle = np.array(vehicle_predict[p])
+        pred_global = global_predict[p]
         
         p_diffs[p] = (pred_vehicle-pred_global)**2
-        
+                 
     return p_diffs
 
 def predict_eval_positions(p_diffs, true_parkings, num_parking_lots = 10):
@@ -204,43 +170,28 @@ def predict_eval_time(p_diffs, true_moving_times, time_window=900):
 def train_vehicle(configuration):
     vehicle = configuration["vehicle_id"]
     p_data = configuration["p_data"]
-    gpu = configuration["gpu"]
-    vehicle_model = configuration["model"]
     true_parkings = configuration["true_parkings"] #for the vehicle
+    oh = configuration["one_hot_encoding"]
     
     #preparing training data:
     p_train = p_data[p_data["veh_id"] == vehicle]
     X_train = p_train.drop(columns=["veh_id", "time", "occupancy", "seed"])
     y_train = p_train["occupancy"]
     
-    with tf.device(gpu):
-        #initializing the model:
-        with tf.device(tf.config.list_logical_devices('GPU')[i].name):
-            '''vehicle_model = keras.Sequential([
-                layers.Dense(64, activation="relu"),
-                layers.Dense(128, activation="relu"),
-                layers.Dense(64, activation="relu"),
-                layers.Dense(1)
-            ])
-            vehicle_model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(0.001))
-            vehicle_model.build(input_shape=(None,79))'''
-            vehicle_model = tf.keras.models.load_model("saved_models/pretrained")
-            #models.append(vehicle_model)
-            
-        #tf.keras.backend.clear_session()
+    #sending 
+    payload = {
+        "one_hot_encoding": oh,
+        "train_features": X_train.values.tolist(),
+        "train_labels": y_train.values.tolist(),
+        "model_weights": global_weights,
+        "epochs": 1
+    }
+    r = requests.post("http://localhost:5000/compute",
+                      json = payload)
+    response = json.loads(r.text)
+    vehicle_predictions = response["predictions"]
         
-        #importing weights of the global model:
-        #global_model_lock.acquire()
-        #vehicle_model.set_weights(global_model.get_weights())
-        #global_model_lock.release()
-        
-        #training 1 epoch:
-        vehicle_model.fit(x=X_train, y=y_train, epochs=1, batch_size=10000, verbose=0)
-        
-    p_diffs = create_difference_dataset(p_data, parkings,
-                    vehicle_model, gpu,
-                    global_model, tf.config.list_logical_devices('GPU')[0].name,
-                    global_model_lock)
+    p_diffs = create_difference_dataset(global_predictions, vehicle_predictions)
     pred_lots = predict_eval_positions(p_diffs, true_parkings)
     offset = predict_eval_time(p_diffs, p_train["time_of_day"])
     
@@ -252,15 +203,11 @@ def train_vehicle(configuration):
     result_lock.release()
             
 if __name__ == "__main__":
-    models = setup_logical_gpus()
+    setup_logical_gpu()
     
-    #loading global model to GPU0:
-    with tf.device(tf.config.list_logical_devices('GPU')[0].name):
-        global_model = tf.keras.models.load_model("saved_models/pretrained")
-    global_model_lock = Lock() # handles access to the global model
     
     #loading the list selected vehicles:
-    with open("veh_list.json", "r") as f:
+    with open("../veh_list.json", "r") as f:
         saved_vehs = json.load(f)
     vehicles = saved_vehs["test_vehs"][:5]
     
@@ -284,23 +231,43 @@ if __name__ == "__main__":
     p_data["time"] = p_data["time"].astype(int)
     p_data["time_of_day"] = (p_data["time"] - (p_data["time"] // (24*60*60))*24*60*60) / (24*60*60) #converting to 0.0-1.0 and removing periodicity
     
+    with open("../one_hot_encoding_dict.json") as f:
+        oh_encoding_dict = json.load(f)
+    
+    #loading global model to GPU0 and making predictions:
+    with tf.device(tf.config.list_logical_devices('GPU')[0].name):
+        global_model = tf.keras.models.load_model("../saved_models/pretrained")
+        n_parkings = len(parkings)
+        
+        global_predictions = {}
+        for p in parkings:
+            test_data = np.zeros((24*60*60, n_parkings+1))
+            i = oh_encoding_dict[p]
+            for j in range(24*60*60):
+                test_data[j, i] = 1 # setting the one hot encoding
+                test_data[j, -1] = j/(24*60*60) # setting the time of day
+                
+            global_predictions[p] = global_model.predict(test_data, batch_size=10000)
+        
+            
+        global_weights = neural_network.encode_weights(global_model.get_weights())
+    
     results = {}
     result_lock = Lock() # handles access to the results object
     
     #collecting configs for multiprocessing training:
     train_config = []
     for i, v in enumerate(vehicles):
-        gpu_idx = i%(NUM_GPUS-1)+1
+        gpu_idx = i%(NUM_GPUS)
         config = {
             "vehicle_id": v,
-            "p_data": p_data, #p_data[p_data["veh_id"] == v],
-            "gpu": tf.config.list_logical_devices('GPU')[gpu_idx].name,
-            "model": models[gpu_idx],
-            "true_parkings": true_parkings[v]
+            "p_data": p_data,
+            "true_parkings": true_parkings[v],
+            "one_hot_encoding": oh_encoding_dict
         }
         train_config.append(config)
         
-    with ThreadPool(NUM_GPUS-1) as pool:
+    with ThreadPool(NUM_GPUS) as pool:
         pool.map(train_vehicle, train_config)
         
     with open("vehicle_results.json", "w") as f:
