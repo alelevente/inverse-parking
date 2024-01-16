@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from multiprocessing import Lock
-from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
 
 import tensorflow as tf
 from tensorflow import keras
@@ -19,8 +19,8 @@ from tensorflow.keras import layers
 TIME_WINDOW = 15*60 #[s]
 
 #GPU:
-NUM_GPUS = 3#6
-GPU_MEM_SIZE = 1536 #MiB
+NUM_GPUS = 5#6
+GPU_MEM_SIZE = 1024 #MiB
 
 #Files:
 RESULTS_ROOT = "../01_simulation/04_results/"
@@ -30,6 +30,11 @@ SEEDS = ['42', '1234', '1867', '613', '1001']
 
 #***SETUP FUNCTION***
 def setup_logical_gpus():
+    '''
+        Sets up virtual GPUs and places models onto them.
+        Returns:
+            - tf models placed on corresponding logical GPUs
+    '''
     #prepare the GPU (for supporting possible multiprocessing)
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
@@ -42,6 +47,12 @@ def setup_logical_gpus():
         except RuntimeError as e:
             # Virtual devices must be set before GPUs have been initialized
             print(e)
+    
+    #placing the model on the gpus:
+    models = [None]
+    for i in range(1, NUM_GPUS):
+        models.append(None)
+    return models
             
             
 #***TRAINING FUNCTION***
@@ -194,6 +205,7 @@ def train_vehicle(configuration):
     vehicle = configuration["vehicle_id"]
     p_data = configuration["p_data"]
     gpu = configuration["gpu"]
+    vehicle_model = configuration["model"]
     true_parkings = configuration["true_parkings"] #for the vehicle
     
     #preparing training data:
@@ -203,20 +215,24 @@ def train_vehicle(configuration):
     
     with tf.device(gpu):
         #initializing the model:
-        vehicle_model = keras.Sequential([
-            layers.Dense(64, activation="relu"),
-            layers.Dense(128, activation="relu"),
-            layers.Dense(64, activation="relu"),
-            layers.Dense(1)
-        ])
-        vehicle_model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(0.001))
-        vehicle_model.build(input_shape=(None,79))
-        print("model ok")
+        with tf.device(tf.config.list_logical_devices('GPU')[i].name):
+            '''vehicle_model = keras.Sequential([
+                layers.Dense(64, activation="relu"),
+                layers.Dense(128, activation="relu"),
+                layers.Dense(64, activation="relu"),
+                layers.Dense(1)
+            ])
+            vehicle_model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(0.001))
+            vehicle_model.build(input_shape=(None,79))'''
+            vehicle_model = tf.keras.models.load_model("saved_models/pretrained")
+            #models.append(vehicle_model)
+            
+        #tf.keras.backend.clear_session()
         
         #importing weights of the global model:
-        global_model_lock.acquire()
-        vehicle_model.set_weights(global_model.get_weights())
-        global_model_lock.release()
+        #global_model_lock.acquire()
+        #vehicle_model.set_weights(global_model.get_weights())
+        #global_model_lock.release()
         
         #training 1 epoch:
         vehicle_model.fit(x=X_train, y=y_train, epochs=1, batch_size=10000, verbose=0)
@@ -230,13 +246,13 @@ def train_vehicle(configuration):
     
     result_lock.acquire()
     results[vehicle] = {
-        "positions": pred_lots,
+        "positions": list(pred_lots),
         "time_offset": offset
     }
     result_lock.release()
             
 if __name__ == "__main__":
-    setup_logical_gpus()
+    models = setup_logical_gpus()
     
     #loading global model to GPU0:
     with tf.device(tf.config.list_logical_devices('GPU')[0].name):
@@ -277,13 +293,14 @@ if __name__ == "__main__":
         gpu_idx = i%(NUM_GPUS-1)+1
         config = {
             "vehicle_id": v,
-            "p_data": p_data[p_data["veh_id"] == v],
+            "p_data": p_data, #p_data[p_data["veh_id"] == v],
             "gpu": tf.config.list_logical_devices('GPU')[gpu_idx].name,
+            "model": models[gpu_idx],
             "true_parkings": true_parkings[v]
         }
         train_config.append(config)
         
-    with Pool(NUM_GPUS-1) as pool:
+    with ThreadPool(NUM_GPUS-1) as pool:
         pool.map(train_vehicle, train_config)
         
     with open("vehicle_results.json", "w") as f:
