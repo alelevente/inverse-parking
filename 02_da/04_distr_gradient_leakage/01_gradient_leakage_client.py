@@ -22,7 +22,7 @@ import neural_network
 TIME_WINDOW = 15*60 #[s]
 
 #GPU:
-NUM_GPUS = 4#6
+NUM_GPUS = 8#6
 GLOBAL_GPU_MEM_SIZE = 512 #MiB
 
 #Files:
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     #loading the list selected vehicles:
     with open("../veh_list.json", "r") as f:
         saved_vehs = json.load(f)
-    vehicles = saved_vehs["test_vehs"][:5]
+    vehicles = saved_vehs["test_vehs"]#[:5]
     
     #reading the parking dataset:
     p_data = pd.DataFrame()

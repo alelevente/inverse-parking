@@ -1,4 +1,4 @@
 {
-	"n_logical_gpus": 4,
+	"n_logical_gpus": 8,
 	"memory_size": 1024
 }
