@@ -145,12 +145,17 @@ def main(args):
 
                 if (day == 0) and (re.findall(args.household_regex, veh_id)) and (not(veh_id in processed_households)):
                     #households:
+                    #Household traffic (due to its continuity during the simulated time) will be handled
+                    #on the first day. This will generate all the moves of the household vehicles for
+                    #all the simulated days:
                     trip_with_stops = generate_stops_households(trips, veh_id, days=args.days)
                     trips_with_parking_tree.insert(len(trips_with_parking_tree), trip_with_stops)
                     processed_households.add(veh_id)
 
                 if (re.findall(args.commuter_regex, veh_id)) and (not(veh_id in processed_commuters)):
                     #commuters:
+                    #Commuters (as they enter and leave the simulation regularly) can be
+                    #handeled iteratively for each day.
                     commuter_stops = generate_stops_commuters(trips, veh_id, day)
                     trips_with_parking_tree.insert(len(trips_with_parking_tree), commuter_stops)
                     processed_commuters.add(veh_id)

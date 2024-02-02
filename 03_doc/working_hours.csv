@@ -1,0 +1,9 @@
+time,portion,type
+21600,0.1,opening
+25200,0.1,opening
+28800,0.5,opening
+32400,0.3,opening
+50400,0.2,closing
+57600,0.5,closing
+61200,0.2,closing
+64800,0.1,closing
