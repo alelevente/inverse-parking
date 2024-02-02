@@ -201,6 +201,11 @@ def train_vehicle(configuration):
         "time_offset": offset
     }
     result_lock.release()
+    
+def combine_commuters(veh_id):
+    if veh_id.startswith("carIn"):
+        return veh_id.split(":")[0]
+    return veh_id
             
 if __name__ == "__main__":
     setup_logical_gpu()
@@ -219,6 +224,9 @@ if __name__ == "__main__":
         pf = pd.read_csv(filename)
         pf["seed"] = [s]*len(pf)
         p_data = pd.concat([p_data, pf])
+    
+    #combining the data of commuters:
+    p_data["veh_id"] = p_data["veh_id"].apply(combine_commuters)
 
     parkings = p_data["parking_id"].unique()
     #preparing ground truth for true parking positions:
